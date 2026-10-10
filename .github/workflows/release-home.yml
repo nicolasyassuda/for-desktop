@@ -1,0 +1,88 @@
+name: Release Stoat Home
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    name: Windows installer
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Checkout assets
+        run: git -c submodule."assets".update=checkout submodule update --init assets
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          # Same as upstream's release job (Node 26 doesn't work there yet)
+          node-version: 24
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm ci
+
+      - name: Identity tests
+        run: node --test test/stoat-home.test.mjs
+
+      - name: Check tag matches package.json version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [ "${GITHUB_REF_NAME}" != "v${version}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match package.json version v${version}"
+            exit 1
+          fi
+          echo "Tag ${GITHUB_REF_NAME} matches package.json"
+
+      - name: Build installer (test build)
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        run: pnpm run make
+
+      - name: Build installer (release, nothing published yet)
+        if: startsWith(github.ref, 'refs/tags/')
+        run: pnpm run publish --dry-run
+
+      - name: Check installer outputs
+        run: |
+          dir=out/make/squirrel.windows/x64
+          version=$(node -p "require('./package.json').version")
+          ls -la "$dir"
+          for f in stoat-home-setup.exe RELEASES "StoatHome-${version}-full.nupkg"; do
+            if [ ! -f "$dir/$f" ]; then
+              echo "::error::Missing $dir/$f"
+              exit 1
+            fi
+          done
+
+      - name: Upload test installer
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        uses: actions/upload-artifact@v4
+        with:
+          name: stoat-home-setup
+          path: out/make/squirrel.windows/x64/stoat-home-setup.exe
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/')
+        run: pnpm run publish --from-dry-run
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
