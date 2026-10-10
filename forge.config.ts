@@ -14,8 +14,8 @@ import path from "node:path";
 
 const STRINGS = {
   author: "Revolt Platforms LTD",
-  name: "Stoat",
-  execName: "stoat-desktop",
+  name: "Stoat Home",
+  execName: "stoat-home",
   description: "Open source user-first chat platform.",
 };
 
@@ -26,7 +26,8 @@ const ASSET_DIR = "assets/desktop";
  */
 const makers: ForgeConfig["makers"] = [
   new MakerSquirrel({
-    name: STRINGS.name,
+    // NuGet id (no spaces allowed); also the install folder %LOCALAPPDATA%\StoatHome
+    name: "StoatHome",
     authors: STRINGS.author,
     // todo: hoist this
     iconUrl: `https://stoat.chat/app/assets/icon-DUSNE-Pb.ico`,
@@ -172,9 +173,11 @@ const config: ForgeConfig = {
   publishers: [
     new PublisherGithub({
       repository: {
-        owner: "stoatchat",
+        owner: "nicolasyassuda",
         name: "for-desktop",
       },
+      draft: false,
+      prerelease: false,
     }),
   ],
 };

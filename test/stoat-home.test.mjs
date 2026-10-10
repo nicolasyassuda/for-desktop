@@ -36,3 +36,32 @@ test("tray shows Stoat Home", () => {
   assert.ok(src.includes('label: "Stoat Home"'));
   assert.ok(!src.includes("Stoat for Desktop"));
 });
+
+const pkg = JSON.parse(read("package.json"));
+const forge = read("forge.config.ts");
+
+test("has its own settings folder name", () => {
+  assert.equal(pkg.productName, "stoat-home");
+});
+
+test("updater repo and publisher repo are the same fork, not upstream", () => {
+  const [owner, name] = pkg.repository.split("/");
+  assert.equal(name, "for-desktop");
+  assert.notEqual(owner, "stoatchat");
+  assert.match(
+    forge,
+    new RegExp(`owner:\\s*"${owner}",\\s*name:\\s*"${name}"`),
+  );
+  assert.ok(!forge.includes('owner: "stoatchat"'));
+});
+
+test("publishes releases the updater can see", () => {
+  assert.match(forge, /draft:\s*false/);
+  assert.match(forge, /prerelease:\s*false/);
+});
+
+test("installs under its own names", () => {
+  assert.match(forge, /name:\s*"Stoat Home",/);
+  assert.match(forge, /execName:\s*"stoat-home",/);
+  assert.match(forge, /new MakerSquirrel\(\{\s*\/\/[^\n]*\n\s*name:\s*"StoatHome",/);
+});

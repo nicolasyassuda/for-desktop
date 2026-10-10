@@ -1,9 +1,9 @@
 {
   "name": "stoat-desktop",
-  "productName": "stoat-desktop",
+  "productName": "stoat-home",
   "version": "1.5.4",
   "main": ".vite/build/main.js",
-  "repository": "stoatchat/desktop",
+  "repository": "nicolasyassuda/for-desktop",
   "scripts": {
     "start": "electron-forge start -- --no-sandbox",
     "package": "electron-forge package",
